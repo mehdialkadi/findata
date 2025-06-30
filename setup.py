@@ -1,17 +1,13 @@
 from setuptools import setup
 
 APP = ['app.py']
-DATA_FILES = [
-    ('templates', ['templates/index.html']),
-    ('script_dependencies', [
-        'script_dependencies/script.py',
-        # add any other needed files
-    ])
-]
+DATA_FILES = ['icon.icns', 'templates', 'script_dependencies']
 OPTIONS = {
     'argv_emulation': True,
-    'packages': ['flask', 'pandas', 'numpy', 'openpyxl', 'pdfplumber', 'pytesseract', 'fitz', 'PIL', 'xlsxwriter'],
-    'iconfile': 'icon.icns',  # optional
+    'iconfile': 'icon.icns',
+    'packages': ['fitz', 'pytesseract', 'pandas', 'numpy', 'openpyxl', 'pdfplumber'],
+    'includes': ['PyQt5', 'PyMuPDF'],
+    'resources': ['templates', 'script_dependencies']
 }
 
 setup(
@@ -20,4 +16,3 @@ setup(
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
 )
-
