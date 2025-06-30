@@ -11,7 +11,7 @@ a = Analysis(
     datas=[
         ('templates', 'templates'),
         ('script_dependencies', 'script_dependencies'),
-        ('icon.ico', '.'),
+        ('icon.icns', '.'),  # <-- use .icns for macOS
     ],
     hiddenimports=collect_submodules('fitz'),
     hookspath=[],
@@ -35,8 +35,8 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,
-    icon='icon.ico',  # Optional: will be ignored if not on Windows
+    console=False,  # <- disables terminal window on macOS
+    icon='icon.icns',  # <-- required for macOS app icon
 )
 
 coll = COLLECT(
