@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Data Extractor</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the progress bar, overall layout, and animations */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f8b800 0%, #e7563c 100%); /* Attijari Colors*/
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            color: #333; /* Darker text for better contrast */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        .main-container {
+            background-color: #ffffff;
+            padding: 45px;
+            border-radius: 20px; /* Even more rounded corners */
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25); /* Stronger, more elegant shadow for contrast */
+            width: 100%;
+            max-width: 650px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            animation: fadeIn 1s ease-out; /* Fade in on load */
+            position: relative; /* For server status indicator */
+        }
+
+        /* Header Styling */
+        h1 {
+            font-weight: 800; /* Extra bold */
+            color: #1a202c; /* Darker header */
+            line-height: 1.2;
+        }
+        h1 .highlight {
+            color: #e7563c; /* Deep blue highlight */
+        }
+        p.subtitle {
+            font-weight: 400;
+            color: #4a5568; /* Grayish text */
+            line-height: 1.5;
+        }
+
+        /* File Input Styling */
+        input[type="file"] {
+            @apply block w-full text-lg text-gray-700
+                   file:mr-4 file:py-3 file:px-6
+                   file:rounded-full file:border-0
+                   file:text-lg file:font-semibold
+                   file:bg-blue-100 file:text-blue-800
+                   hover:file:bg-blue-200;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #cbd5e0; /* Light border */
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        input[type="file"]:focus {
+            outline: none;
+            border-color: #e7563c;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, rgb(248, 149, 0) 0%, #e7563c 100%);
+            border: none;
+            border-radius: 16px;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(63, 43, 150, 0.3);
+            transition: all 0.3s ease-out;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-4px); /* Lift more on hover */
+            box-shadow: 0 15px 35px rgba(63, 43, 150, 0.4); /* Enhanced shadow on hover */
+        }
+        .btn-primary:active {
+            transform: translateY(0px); /* Press-down effect */
+            box-shadow: 0 5px 15px rgba(63, 43, 150, 0.2), inset 0 3px 8px rgba(0,0,0,0.2); /* Inset shadow for pressed look */
+        }
+        .btn-primary:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.4); /* Focus ring matching button color */
+        }
+
+
+        /* Progress Bar Styling */
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e7ff; /* Lighter blue */
+            border-radius: 10px;
+            overflow: hidden;
+            height: 16px;
+            margin-top: 20px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #e7563c, #e7563c); /* Gradient blue */
+            border-radius: 10px;
+            transition: width 0.4s ease-out; /* Smoother transition */
+            box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Status Messages */
+        .message-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .message-text.uploading {
+        background-color: #fff6e0; /* very light yellow */
+        color: #d89e00;            /* deep amber (similar to #f8b800 but darker) */
+        }
+
+        .message-text.processing {
+        background-color: #ffeae4; /* soft warm tone */
+        color: #e7563c;            /* brand orange/red */
+        }
+
+        .message-text.success {
+        background-color: #f3fbe3; /* very light warm greenish-yellow */
+        color: #60a513;            /* success green with slight warmth */
+        }
+
+        .message-text.error {
+        background-color: #ffe9e5; /* warm light red/pink */
+        color: #cc2b1e;            /* strong warm red */
+        }
+        /* Download Links Container - ENHANCED */
+        .download-links-section {
+            background-color: #f8fafc; /* Very light gray/off-white */
+            border: 1px solid #e2e8f0; /* Light border */
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            animation: fadeInScale 0.7s ease-out forwards; /* Animation when it appears */
+            opacity: 0; /* Start hidden for animation */
+            transform: scale(0.95); /* Start slightly smaller for animation */
+        }
+        .download-links-section.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .download-links-section h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 20px;
+        }
+
+        /* Individual Download Links - ENHANCED */
+        .download-link-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 15px 25px;
+            background-color: #eff6ff; /* Very light blue background */
+            border: 1px solid #bfdbfe; /* Light blue border */
+            border-radius: 10px;
+            text-decoration: none;
+            color: #1e40af; /* Darker blue text */
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+        }
+        .download-link-item:hover {
+            background-color: #dbeafe; /* Lighter blue on hover */
+            border-color: #93c5fd; /* Stronger blue border on hover */
+            transform: translateY(-2px); /* Slight lift */
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); /* More pronounced shadow */
+            color: #1c3c9c;
+        }
+        .download-link-item svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor; /* Inherit color from parent */
+        }
+
+        .download-links-list { /* Renamed for clarity */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Server Status Indicator */
+        #serverStatus {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #cbd5e0; /* Default gray */
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        #serverStatus.online {
+            background-color: #10b981; /* Green */
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.5);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        #serverStatus.offline {
+            background-color: #ef4444; /* Red */
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5);
+        }
+        #serverStatus.checking {
+            background-color: #f59e0b; /* Yellow/Orange */
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.5);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #3b82f6; /* Blue */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto; /* Center spinner */
+        }
+        .hidden {
+            display: none;
+        }
+
+        /* Keyframe Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .upload-area {
+        border: 3px dashed #ff6a00;
+        border-radius: 15px;
+        padding: 40px 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-align: center;
+        }   
+
+        .upload-area:hover {
+            border-color: #ee0a24;
+            background: rgba(255, 106, 0, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #ee0a24;
+            background: rgba(255, 106, 0, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #ff6a00;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .upload-subtext {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="main-container">
+        <div id="serverStatus" title="Server Status"></div> <!-- Server Status Indicator -->
+
+        <h1 class="text-4xl sm:text-5xl font-extrabold mb-2">
+            <span class="highlight">Financial Data</span> Extractor
+        </h1>
+        <p class="subtitle text-md sm:text-lg mb-8">
+            Automatically process & analyze <strong>Financial Data</strong> from your <strong>PDF</strong>.
+        </p>
+
+        <form id="uploadForm" class="flex flex-col gap-8 items-center">
+            <!-- Drag-and-drop upload zone -->
+        <div class="upload-area w-full" id="uploadArea" onclick="document.getElementById('pdf_file').click()">
+            <div class="upload-icon text-4xl mb-2">📄</div>
+            <div class="upload-text font-semibold text-lg">Click or Drag your PDF file</div>
+            <div class="upload-subtext text-sm text-gray-600">Supported Formats: Searchable PDF (Balance sheet - P&L )</div>
+            <div id="fileNamePreview" class="mt-4 text-sm text-gray-800 font-semibold"></div> <!-- ✅ added here -->
+        </div>
+
+
+            <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" hidden />
+
+        <button type="submit" class="btn-primary" id="uploadButton">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="42" height="42" fill="white">
+                <path d="M5 20h14v-2H5v2zm7-18L5.33 9h3.17v4h6V9h3.17L12 2z"/>
+            </svg>
+        </button>
+
+
+
+        </form>
+
+
+        <div id="statusArea" class="mt-8 w-full">
+            <div class="progress-bar-container hidden" id="progressBarContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="spinner hidden" id="loadingSpinner"></div>
+            <p id="message" class="message-text"></p>
+            
+            <!-- ENHANCED DOWNLOAD LINKS SECTION -->
+            <div id="downloadLinksSection" class="download-links-section hidden">
+                <h2>Your Files Are Ready!</h2>
+                <div id="downloadLinksList" class="download-links-list">
+                    <!-- Download links will appear here -->
+                </div>
+            </div>
+            <!-- END ENHANCED DOWNLOAD LINKS SECTION -->
+        </div>
+    </div>
+
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const pdfFileInput = document.getElementById('pdf_file');
+        const uploadButton = document.getElementById('uploadButton');
+        const progressBarContainer = document.getElementById('progressBarContainer');
+        const progressBar = document.getElementById('progressBar');
+        const messageDisplay = document.getElementById('message');
+        const downloadLinksSection = document.getElementById('downloadLinksSection'); // New: Container for the whole section
+        const downloadLinksList = document.getElementById('downloadLinksList'); // New: Actual list of links
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const serverStatusIndicator = document.getElementById('serverStatus');
+
+        let pollingInterval;
+        let serverHealthInterval;
+
+        // Function to update message display with dynamic classes
+        function updateMessage(text, type) {
+            messageDisplay.textContent = text;
+            messageDisplay.className = `message-text ${type}`;
+        }
+
+        // --- Server Health Check ---
+        async function checkServerStatus() {
+            serverStatusIndicator.className = 'checking';
+            serverStatusIndicator.title = 'Server Status: Checking...';
+            try {
+                const response = await fetch('/health');
+                if (response.ok) {
+                    serverStatusIndicator.className = 'online';
+                    serverStatusIndicator.title = 'Server Status: Online';
+                } else {
+                    serverStatusIndicator.className = 'offline';
+                    serverStatusIndicator.title = 'Server Status: Offline (HTTP Error)';
+                }
+            } catch (error) {
+                serverStatusIndicator.className = 'offline';
+                serverStatusIndicator.title = 'Server Status: Offline (Network Error)';
+                console.error('Server health check failed:', error);
+            }
+        }
+
+        // Run health check on page load and every 10 seconds
+        window.onload = () => {
+            checkServerStatus();
+            serverHealthInterval = setInterval(checkServerStatus, 10000); // Check every 10 seconds
+        };
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const file = pdfFileInput.files[0];
+            if (!file) {
+                updateMessage('Please select a PDF file to upload.', 'error');
+                return;
+            }
+
+            // Reset UI for new upload
+            progressBarContainer.classList.add('hidden');
+            loadingSpinner.classList.add('hidden');
+            downloadLinksSection.classList.add('hidden'); // Hide the entire section
+            downloadLinksSection.classList.remove('visible'); // Remove animation class
+            downloadLinksList.innerHTML = ''; // Clear old links
+            progressBar.style.width = '0%';
+
+            const formData = new FormData();
+            formData.append('pdf_file', file);
+
+            // Show progress bar and initial message
+            progressBarContainer.classList.remove('hidden');
+            updateMessage('Uploading file... 0%', 'uploading');
+            uploadButton.disabled = true;
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload', true);
+
+            xhr.upload.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    progressBar.style.width = percentComplete + '%';
+                    updateMessage(`Uploading file: ${percentComplete.toFixed(0)}%`, 'uploading');
+                }
+            };
+
+            xhr.onload = function() {
+                uploadButton.disabled = false;
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        progressBar.style.width = '100%'; // Ensure 100% on successful upload
+                        updateMessage('File uploaded successfully. Starting data processing...', 'processing');
+                        loadingSpinner.classList.remove('hidden'); // Show spinner for processing
+                        startPollingStatus(response.task_id);
+                    } else {
+                        updateMessage(`Error: ${response.message}`, 'error');
+                        progressBarContainer.classList.add('hidden');
+                    }
+                } else {
+                    updateMessage(`Server error: ${xhr.status} - ${xhr.statusText}`, 'error');
+                    progressBarContainer.classList.add('hidden');
+                }
+            };
+
+            xhr.onerror = function() {
+                uploadButton.disabled = false;
+                updateMessage('Network error or server unreachable.', 'error');
+                progressBarContainer.classList.add('hidden');
+            };
+
+            xhr.send(formData);
+        });
+
+        function startPollingStatus(taskId) {
+            // Clear any existing polling interval
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+
+            // Poll every 3 seconds
+            pollingInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/status/${taskId}`);
+                    const data = await response.json();
+
+                    if (data.status === 'completed') {
+                        clearInterval(pollingInterval);
+                        loadingSpinner.classList.add('hidden');
+                        updateMessage('Processing complete! Your files are ready for download.', 'success');
+                        displayDownloadLinks(taskId, data.files);
+                    } else if (data.status === 'failed') {
+                        clearInterval(pollingInterval);
+                        loadingSpinner.classList.add('hidden');
+                        updateMessage(`Processing failed: ${data.error || 'Unknown error'}. Please try again.`, 'error');
+                        progressBarContainer.classList.add('hidden'); // Hide progress bar on failure
+                    } else if (data.status === 'processing') {
+                        // Keep processing message and spinner
+                        updateMessage('Processing data... Please wait.', 'processing');
+                    }
+                } catch (error) {
+                    console.error('Error fetching status:', error);
+                    clearInterval(pollingInterval);
+                    loadingSpinner.classList.add('hidden');
+                    updateMessage('Could not fetch processing status. Please check console for errors.', 'error');
+                }
+            }, 3000); // Poll every 3 seconds
+        }
+
+        function displayDownloadLinks(taskId, files) {
+            downloadLinksList.innerHTML = ''; // Clear previous links
+            if (files && files.length > 0) {
+                files.forEach(filename => {
+                    const link = document.createElement('a');
+                    link.href = `/download/${taskId}/${filename}`;
+                    // Add an SVG icon for download (a simple cloud download icon)
+                    link.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-4h2v4zm4-4h-2V6h-2v6H9l3 3 3-3z"/>
+                        </svg>
+                        ${filename}`;
+                    link.target = '_blank'; // Open in new tab
+                    link.className = 'download-link-item';
+                    downloadLinksList.appendChild(link);
+                });
+                downloadLinksSection.classList.remove('hidden'); // Show the entire section
+                downloadLinksSection.classList.add('visible'); // Trigger fade-in animation
+            } else {
+                downloadLinksList.innerHTML = '<p class="text-gray-600 text-base font-medium">No files were generated for download.</p>';
+                downloadLinksSection.classList.remove('hidden'); // Show the entire section
+                downloadLinksSection.classList.add('visible'); // Trigger fade-in animation
+            }
+        }
+                // --- 🫀 Start sending heartbeats to keep server alive ---
+        setInterval(() => {
+            fetch('/heartbeat').catch((e) => {
+                console.warn('Heartbeat failed:', e);
+            });
+        }, 5000); // Send every 5 seconds
+
+        // Drag-and-drop enhancements
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                pdfFileInput.files = files;
+            }
+        });
+        const fileNamePreview = document.getElementById('fileNamePreview');
+
+        // Utility: Show selected file name
+        function showSelectedFileName(file) {
+            fileNamePreview.textContent = `📎 ${file.name}`;
+        }
+
+        // When clicking input
+        pdfFileInput.addEventListener('change', () => {
+            if (pdfFileInput.files.length > 0) {
+                showSelectedFileName(pdfFileInput.files[0]);
+            }
+        });
+
+        // When dropping a file
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                pdfFileInput.files = files;
+                showSelectedFileName(files[0]);
+            }
+        });
+
+    </script>
+</body>
+</html>
