@@ -1,0 +1,10 @@
+
+Flask
+pandas
+numpy
+openpyxl
+pdfplumber
+pytesseract # Requires Tesseract OCR engine to be installed separately on your system
+PyMuPDF # For 'fitz' import
+Pillow # For 'PIL' import
+xlsxwriter
